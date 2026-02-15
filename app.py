@@ -1,6 +1,12 @@
 from flask import Flask, request, jsonify
+import pickle
+import numpy as np
 
 app = Flask(__name__)
+
+# Load trained model
+with open("model.pkl", "rb") as f:
+    model = pickle.load(f)
 
 @app.route("/")
 def home():
@@ -8,20 +14,17 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    data = request.json
-    
-    value = data.get("value", 0)
-    
-    if value > 50:
-        result = "High"
-    else:
-        result = "Low"
-        
+    data = request.get_json()
+    value = data["value"]
+
+    prediction = model.predict(np.array([[value]]))[0]
+
+    label = "High" if prediction == 1 else "Low"
+
     return jsonify({
         "input": value,
-        "prediction": result
+        "prediction": label
     })
 
-
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(debug=True)
